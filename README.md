@@ -1,1 +1,3 @@
-# ecp
+# Exercises for the Emerging Computing Lecture
+
+
