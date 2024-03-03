@@ -6,23 +6,27 @@ from scipy import signal
 from convolution import laConvolution
 from ecp_filters import gauss_filt1
 
-def convol_test(matr, kernel, kernel_name = "undefined_name", nbits = 12, use_parallel = False, preprint_result = False, verbosity = 0):
+def convol_test(matr, kernel, kernel_name = "undefined_name", nstages = 4, use_parallel = False, preprint_result = False, verbosity = 0):
 
     exact_convol = signal.convolve2d(matr, kernel, mode = "same")
     if preprint_result:
         print(exact_convol)
 
-    appr_convol,enrg = laConvolution(np.array(matr),np.array(kernel), nbits, 0, use_parallel)
+    appr_convol,enrg, prtime = laConvolution(np.array(matr),np.array(kernel), nstages, 0, use_parallel)
+
+    par_string = "P" if use_parallel else ""
 
     if (not np.array_equal(exact_convol, appr_convol)):
         print("\033[91m", end='')
-        print("Convolution with {} unsuccesful!".format(kernel_name))
+        print("Convolution{} with {} unsuccesful!".format(par_string,kernel_name))
         print("Exact convolution:")
         print(exact_convol.shape)
         print(exact_convol)
         print("My convolution:")
         print(appr_convol.shape)
         print(appr_convol)
+        print("Energy:", enrg)
+        print("Proc_time:", prtime)
         if verbosity > 0:
             print("Wrong elements:")
             diff_mask = appr_convol != exact_convol
@@ -36,7 +40,9 @@ def convol_test(matr, kernel, kernel_name = "undefined_name", nbits = 12, use_pa
 
     else:
         print("\033[92m", end='')
-        print("SUCCESS: Convolution with {}!".format(kernel_name))
+        print("SUCCESS: Convolution{} with {}!".format(par_string, kernel_name))
+        print("Energy:", enrg)
+        print("Proc_time:", prtime)
 
     print("\033[0m", end='')
 
@@ -103,13 +109,13 @@ convol_test(random_matrix, gauss_filt1, "gauss_filt1", 16)
 convol_test(random_matrix, kern2, "kern2", use_parallel=True)
 convol_test(random_matrix, kern3, "kern3", use_parallel = True)
 convol_test(random_matrix, kern4, "kern4", use_parallel = True)
-convol_test(random_matrix, kern5, "kern5", nbits = 16, use_parallel = True)
-convol_test(random_matrix, kern6, "kern6", nbits = 20, use_parallel = True)
-convol_test(random_matrix, kern7, "kern7", nbits = 20, use_parallel = True)
-convol_test(random_matrix, gauss_filt1, "gauss_filt1", nbits = 20, use_parallel = True)
+convol_test(random_matrix, kern5, "kern5", nstages = 5, use_parallel = True)
+convol_test(random_matrix, kern6, "kern6", nstages = 7, use_parallel = True)
+convol_test(random_matrix, kern7, "kern7", nstages = 7, use_parallel = True)
+convol_test(random_matrix, gauss_filt1, "gauss_filt1", nstages = 7, use_parallel = True)
 array = np.random.randint(1, high = 50, size=(50,50))
 convol_test(array, kern2, "kern2", use_parallel = True)
 convol_test(array, kern3, "kern3", use_parallel = True)
 convol_test(array, kern4, "kern4", use_parallel = True)
-#convol_test(Y_sample.astype(int), kern4, "kern4", nbits = 16, use_parallel = False)
-# convol_test(Y_sample.astype(int), kern4, "kern4", nbits = 16, use_parallel = True)
+#convol_test(Y_sample.astype(int), kern4, "kern4", nstages = 5, use_parallel = False)
+# convol_test(Y_sample.astype(int), kern4, "kern4", nstages = 5, use_parallel = True)

@@ -13,16 +13,16 @@ from multiprocessing import Pool, cpu_count
 
 # In[37]:
 
-def decideSeqPar(func, chunk_size, num_processes, inp_flat,  nbits = 12, approx_until = 0, use_parallel = False):
+def decideSeqPar(func, chunk_size, num_processes, inp_flat,  nstages = 12, approx_until = 0, use_parallel = False):
     if use_parallel:
         pool = Pool(processes=num_processes)  # Create a pool of processes
 
     chunk_indices = range(0, len(inp_flat[0]), chunk_size)
 
     if len(inp_flat) == 1:
-        args = [(inp_flat[0][i:i+chunk_size], nbits, approx_until) for i in chunk_indices]
+        args = [(inp_flat[0][i:i+chunk_size], nstages, approx_until) for i in chunk_indices]
     elif len(inp_flat) == 2:
-        args = [(inp_flat[0][i:i+chunk_size], inp_flat[1][i:i+chunk_size], nbits, approx_until) for i in chunk_indices]
+        args = [(inp_flat[0][i:i+chunk_size], inp_flat[1][i:i+chunk_size], nstages, approx_until) for i in chunk_indices]
 
     if use_parallel:
         results = pool.map(func, args)
@@ -36,7 +36,7 @@ def decideSeqPar(func, chunk_size, num_processes, inp_flat,  nbits = 12, approx_
         pool.join()
     return results
 
-def binaryVectOp(func, a, b, nbits = 12, approx_until = 0, use_parallel = False):
+def binaryVectOp(func, a, b, nstages = 12, approx_until = 0, use_parallel = False):
 
     a_shap = a.shape
 
@@ -48,41 +48,45 @@ def binaryVectOp(func, a, b, nbits = 12, approx_until = 0, use_parallel = False)
 
     res_flat = np.zeros_like(a_flat)
     total_energy = 0
+    total_prtime = 0
     num_processes = min(cpu_count(), len(a_flat))
     chunk_size = int(np.ceil(len(a_flat) / num_processes))
 
-    results = decideSeqPar(func, chunk_size, num_processes, (a_flat, b_flat), nbits, approx_until, use_parallel)
+    results = decideSeqPar(func, chunk_size, num_processes, (a_flat, b_flat), nstages, approx_until, use_parallel)
     for i, chunk_result in enumerate(results):
-        for j, (r, energy) in enumerate(chunk_result):
+        for j, (r, energy, prtime) in enumerate(chunk_result):
             idx = i * chunk_size + j
             if idx < len(res_flat):
                 res_flat[idx] = r
                 total_energy += energy
+                total_prtime += prtime
 
     # Reshape the flattened result back to the original shape
     res = np.reshape(res_flat, a.shape)
 
-    return res, total_energy
+    return res, total_energy, prtime
 
-def unaryVectOp(func, a, nbits = 12, approx_until = 0, use_parallel = False):
+def unaryVectOp(func, a, nstages = 12, approx_until = 0, use_parallel = False):
 
     a_shap = a.shape
     a_flat = a.flat
 
     res_flat = np.zeros_like(a_flat)
     total_energy = 0
+    total_prtime = 0
     num_processes = min(cpu_count(), len(a_flat))
     chunk_size = int(np.ceil(len(a_flat) / num_processes))
 
-    results = decideSeqPar(func, chunk_size, num_processes, (a_flat,), nbits, approx_until, use_parallel)
+    results = decideSeqPar(func, chunk_size, num_processes, (a_flat,), nstages, approx_until, use_parallel)
     for i, chunk_result in enumerate(results):
-        for j, (r, energy) in enumerate(chunk_result):
+        for j, (r, energy, prtime) in enumerate(chunk_result):
             idx = i * chunk_size + j
             if idx < len(res_flat):
                 res_flat[idx] = r
                 total_energy += energy
+                total_prtime += prtime
 
     # Reshape the flattened result back to the original shape
     res = np.reshape(res_flat, a.shape)
 
-    return res, total_energy
+    return res, total_energy, prtime

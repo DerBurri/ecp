@@ -19,19 +19,45 @@ test_cases = [
 ]
 
 for a, b in test_cases:
-    result,enrg = laMultiplication(a, b)
-    print(f"laMultiplication({a}, {b}) = {result, enrg}, test: {result == a*b}")
+    result, enrg, prtime = laMultiplication(a, b)
+    is_res_correct = result == a*b
+    if is_res_correct:
+        print("\033[92m", end='')
+    else:
+        print("\033[91m", end='')
+
+    print(f"laMultiplication({a}, {b}) = {result, enrg, prtime}, test: {is_res_correct}")
+
+    print("\033[0m", end='')
 
 test_cases = [0, -1, -2, 2, 6, 64, -10, 5, 16, -8, 1]
 
 for a in test_cases:
-    result,enrg = laSquare(a, nbits=16)
-    print(f"laSquare({a}) = {result,enrg}, test: {result == a**2}")
+    result,enrg, prtime = laSquare(a, nstages=5)
+    is_res_correct = result == a**2
 
-tst_cases = [(0,0), (1,1), (2,1), (4,2), (8,2), (16, 4), (25,5), (30,5), (784, 28), (807, 28)]
+    if is_res_correct:
+        print("\033[92m", end='')
+    else:
+        print("\033[91m", end='')
+
+    print(f"laSquare({a}) = {result,enrg, prtime}, test: {is_res_correct}")
+
+    print("\033[0m", end='')
+
+tst_cases = [(0,0), (1,1), (2,1), (4,2), (8,2), (16, 4), (25,5), (30,5), (35,5), (784, 28), (807, 28), (1023098, 1011)]
 # tst_cases = [(784, 28)]
 
 for tst, _ in tst_cases:
-   res, enrg = laSqRoot(tst, nbits = 21)
-   corr_res = int(tst ** 0.5)
-   print(f"laSqRoot({tst}) = {res,enrg}, correct: {res == corr_res} ({corr_res})")
+    res, enrg, prtime = laSqRoot(tst, nstages = 14)
+    corr_res = int(tst ** 0.5)
+
+    is_res_correct = res == corr_res
+
+    if is_res_correct:
+        print("\033[92m", end='')
+    else:
+        print("\033[91m", end='')
+
+    print(f"laSqRoot({tst}) = {res,enrg, prtime}, correct: {is_res_correct} ({corr_res})")
+    print("\033[0m", end='')
