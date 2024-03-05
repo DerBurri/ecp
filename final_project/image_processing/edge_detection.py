@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from scipy import signal
+from PIL import Image
 
 from skimage import io, img_as_float, img_as_ubyte
 from skimage.metrics import structural_similarity as ssim
@@ -23,23 +24,6 @@ from math import ceil
 from convolution import laConvolution
 from ecp_filters import sobel_horizontal, sobel_vertical, gauss_filt1, gauss_filt
 from vect_ops import laSquareVect, laSqRootVect, laAddVect
-
-# ## Import sample image
-# 
-# A sample image is a very sympathetic man that uses its old camera to take photos.
-
-# In[15]:
-
-# Your code here
-sample_image = io.imread("man.jpeg")
-# print(sample_image.shape)
-
-R_1 = sample_image[:, :, 0] 
-G_1 = sample_image[:, :, 1]
-B_1 = sample_image[:, :, 2]
-
-#formula for converting colour(RGB) to Gray Image scale Image
-Y_sample = (0.299 * np.array(R_1)) + (0.587 * np.array(G_1)) + (0.114 * np.array(B_1)) 
 
 # plt.imshow(Y_sample , cmap = "gray")
 # print(Y_sample.shape)
@@ -73,72 +57,84 @@ def stage_num_correction(peak_val, nstages):
 
     if (2*bitlen > nstages*3):
         new_nstages = int(ceil(2*bitlen / 3))
-        print("Correcting number of stages: {} -> {}".format(nstages, new_nstages))
+        print("INFO: stage_num_correction: Correcting number of stages: {} -> {}".format(nstages, new_nstages))
 
     return new_nstages
 
 
 # Function to perform convolution with the Sobel kernels
-def sobelEdgeDetection(image, approx_until = 0):
+def sobelEdgeDetection(image, approx_until = 0, keep_nstages_constant = False):
 
+    debug = True
     total_energy = 0
     total_prtime = 0
-    nstages = 4
+    nstages = 14
 
-    peak_val = int(max(np.max(image), np.max(gauss_filt1)))
-    nstages = stage_num_correction(peak_val, nstages)
+    if not keep_nstages_constant:
+        peak_val = int(max(np.max(image), np.max(gauss_filt1)))
+        nstages = stage_num_correction(peak_val, nstages)
 
     filt_img, enrg, prtime = laConvolution(image.astype(int), gauss_filt1, nstages=nstages, approx_until=approx_until, use_parallel = True)
-    print("Initial filtering done!")
+    print("INFO: sobelEdgeDetection: Initial filtering done")
     total_energy += enrg
     total_prtime += prtime
 
     filt_img = ((filt_img - np.min(filt_img)) / (np.max(filt_img) - np.min(filt_img))) * 255
 
-    peak_val = int(max(np.max(filt_img), np.max(sobel_vertical), np.max(sobel_horizontal)))
-    nstages = stage_num_correction(peak_val, nstages)
+    if not keep_nstages_constant:
+        peak_val = int(max(np.max(filt_img), np.max(sobel_vertical), np.max(sobel_horizontal)))
+        nstages = stage_num_correction(peak_val, nstages)
 
     # Apply convolution with the horizontal and vertical Sobel kernels
     h_edges, enrg, prtime = laConvolution(filt_img.astype(int), sobel_horizontal, nstages=nstages, approx_until=approx_until, use_parallel = True)
-    print("Horizontal convolution finished!")
+    print("INFO: sobelEdgeDetection: Horizontal convolution finished")
     total_energy += enrg
     total_prtime += prtime
 
     v_edges, enrg, prtime = laConvolution(filt_img.astype(int), sobel_vertical, nstages=nstages, approx_until=approx_until, use_parallel = True)
-    print("Vertical convolution finished!")
+    print("INFO: sobelEdgeDetection: Vertical convolution finished")
     total_energy += enrg
     total_prtime += prtime
 
-    # print(h_edges)
-    # print(v_edges)
+    if debug:
+        print("DEBUG: sobelEdgeDetection: Detected maximum in h_edges: {}".format(np.max(h_edges)))
+        print("DEBUG: sobelEdgeDetection: Detected minimum in h_edges: {}".format(np.min(h_edges)))
+        print("DEBUG: sobelEdgeDetection: Detected maximum in v_edges: {}".format(np.max(v_edges)))
+        print("DEBUG: sobelEdgeDetection: Detected minimum in v_edges: {}".format(np.min(v_edges)))
 
-    peak_val = int(max(np.max(h_edges), np.max(v_edges)))
-    nstages = stage_num_correction(peak_val, nstages)
+    if not keep_nstages_constant:
+        peak_val = int(max(np.max(h_edges), np.max(v_edges)))
+        nstages = stage_num_correction(peak_val, nstages)
 
     h_edg_sq, enrg, prtime = laSquareVect(h_edges.astype(int), nstages=nstages, approx_until=approx_until, use_parallel=True)
-    print("Horizontal edge square finished!")
+    print("INFO: sobelEdgeDetection: Horizontal edge square finished")
     total_energy += enrg
     total_prtime += prtime
 
     v_edg_sq, enrg, prtime = laSquareVect(v_edges.astype(int), nstages=nstages, approx_until=approx_until, use_parallel=True)
-    print("Vertical edge square finished!")
+    print("INFO: sobelEdgeDetection: Vertical edge square finished")
     total_energy += enrg
     total_prtime += prtime
 
-    # print(h_edg_sq)
-    # print(v_edg_sq)
+    if debug:
+        print("DEBUG: sobelEdgeDetection: Detected maximum in h_edg_sq: {}".format(np.max(h_edg_sq)))
+        print("DEBUG: sobelEdgeDetection: Detected minimum in h_edg_sq: {}".format(np.min(h_edg_sq)))
+        print("DEBUG: sobelEdgeDetection: Detected maximum in v_edg_sq: {}".format(np.max(v_edg_sq)))
+        print("DEBUG: sobelEdgeDetection: Detected minimum in v_edg_sq: {}".format(np.min(v_edg_sq)))
 
     # Calculate the magnitude of gradients
     magnitude_squared, enrg, prtime = laAddVect(h_edg_sq.astype(int), v_edg_sq.astype(int), nstages=nstages, approx_until=approx_until, use_parallel=True)
-    print("Magnitude addition finished!")
+    print("INFO: sobelEdgeDetection: Magnitude addition finished")
     total_energy += enrg
     total_prtime += prtime
 
-    # print(np.max(magnitude_squared))
-    # print(np.min(magnitude_squared))
+    if debug:
+        print("DEBUG: sobelEdgeDetection: Detected maximum in squared magnitude: {}".format(np.max(magnitude_squared)))
+        print("DEBUG: sobelEdgeDetection: Detected minimum in squared magnitude: {}".format(np.min(magnitude_squared)))
 
-    peak_val = int(np.max(magnitude_squared))
-    nstages = stage_num_correction(peak_val, nstages)
+    if not keep_nstages_constant:
+        peak_val = int(np.max(magnitude_squared))
+        nstages = stage_num_correction(peak_val, nstages)
 
     magnitude_approx, enrg, prtime = laSqRootVect(magnitude_squared.astype(int), nstages=nstages, approx_until=approx_until, use_parallel=True)
     total_energy += enrg
@@ -151,7 +147,7 @@ def sobelEdgeDetection(image, approx_until = 0):
     # magnitude_uint8 = magnitude_normalized.astype(np.uint8)
     magnitude_uint8 = magnitude_normalized
 
-    return magnitude_uint8,total_energy, total_prtime
+    return magnitude_uint8,total_energy, total_prtime, nstages
 
 # det_edges, tot_energ = sobelEdgeDetection(Y_sample.astype(int))
 # det_edges = sobelEdgeDetectionExact(Y_sample)
@@ -160,44 +156,68 @@ def sobelEdgeDetection(image, approx_until = 0):
 # plt.imshow(det_edges, cmap = "gray")
 # plt.show()
 
+# ## Import sample image
+#
+# A sample image is a very sympathetic man that uses its old camera to take photos.
+
+# In[15]:
+
+# Your code here
+sample_image = io.imread("man.jpeg")
+# print(sample_image.shape)
+
+R_1 = sample_image[:, :, 0]
+G_1 = sample_image[:, :, 1]
+B_1 = sample_image[:, :, 2]
+
+#formula for converting colour(RGB) to Gray Image scale Image
+Y_sample = (0.299 * np.array(R_1)) + (0.587 * np.array(G_1)) + (0.114 * np.array(B_1))
 
 # ### Concluding analysis
 # 
 # This measures MSE, SSIM and PSNR when image processed by the LaConvolution function and by signal.convolve2d. The iteration over multiple approximation levels takes place as even more and more bits are approximated thus also the LaConvolution function's result gets more erroneous.
 
-# In[ ]:
+# In[1]:
 
 def compare_image_operation(proc_tst, proc_exact):
     error = mse(proc_exact, proc_tst)
-    print("    MSE = {}".format(error))
+    print("INFO: compare_image_operation: MSE = {}".format(error))
 
     data_range = proc_exact.max() - proc_exact.min()
 
     similarity = ssim(proc_exact, proc_tst, data_range=data_range)
-    print("    SSIM = {}".format(similarity))
+    print("INFO: compare_image_operation: SSIM = {}".format(similarity))
     peak_snr = psnr(proc_exact, proc_tst, data_range=data_range)
-    print("    PSNR = {}".format(peak_snr))
+    print("INFO: compare_image_operation: PSNR = {}".format(peak_snr))
+
+    return error, similarity, peak_snr
+
+def approx_step_edge_detection(image, exact_edge_det, approx_until = 0):
+    my_edge_det, energ, prtime, nstages = sobelEdgeDetection(image.astype(int), approx_until=approx_until, keep_nstages_constant = True)
+    my_image = Image.fromarray(my_edge_det.astype(np.uint8), 'L')
+    my_image.save('tst_edge_detect_{}.png'.format(approx_until))
+    error, similarity, peak_snr = compare_image_operation(exact_edge_det, my_edge_det)
+    print(f"INFO: approx_step_edge_detection: Captured test version with {approx_until} approximated stages")
+    return error, similarity, peak_snr, energ, prtime, nstages
+
+
 
 exact_edge_det = sobelEdgeDetectionExact(Y_sample)
-my_edge_det, energ, prtime = sobelEdgeDetection(Y_sample.astype(int))
-print("Total energy: ", energ)
-print("Total proctime: ", prtime)
+exact_image = Image.fromarray(exact_edge_det.astype(np.uint8), 'L')
+exact_image.save('ref_edge_detect.png')
+# plt.imshow(exact_edge_det, cmap = "gray")
+# plt.show()
 
-compare_image_operation(exact_edge_det, my_edge_det)
+error, similarity, peak_snr, energ, prtime, nstages = approx_step_edge_detection(Y_sample, exact_edge_det)
 
-# exact_convolution_result = signal.convolve2d(Y_sample, sobel_horizontal, mode = "same")
+table_rows = [['Op_type', 'Approx_level', 'MSE', 'SSIM', 'PSNR', 'Sum_energy', 'Sum_proctime']]
+table_rows.append(["EDGE", 0, error, similarity, peak_snr, energ, prtime])
 
-# # Your code here
-# for i in range(8):
-#     print("Number of approximated bits on addition: ", i)
-#     approx_convolution_result,_ = laConvolution(Y_sample, sobel_horizontal, i)
+for appr_lvl in range(1, nstages+1):
+    error, similarity, peak_snr, energ, prtime,_ = approx_step_edge_detection(Y_sample, exact_edge_det, appr_lvl)
+    table_rows.append(["EDGE", 0, error, similarity, peak_snr, energ, prtime])
 
-#     data_range = exact_convolution_result.max() - exact_convolution_result.min()
-
-#     # Compare results and calculate error/similarity
-#     error = mse(exact_convolution_result, approx_convolution_result)
-#     print("    MSE = {}".format(error))
-#     similarity = ssim(exact_convolution_result, approx_convolution_result, data_range=data_range)
-#     print("    SSIM = {}".format(similarity))
-#     peak_snr = psnr(exact_convolution_result, approx_convolution_result, data_range=data_range)
-#     print("    PSNR = {}".format(peak_snr))
+print(table_rows)
+with open('measured_results.csv', mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerows(table_rows)
