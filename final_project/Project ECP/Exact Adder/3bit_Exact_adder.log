@@ -1,0 +1,110 @@
+LTspice 24.0.9 for Windows
+Circuit: * C:\Users\Pranjal\Documents\Project-ECP\Exact Adder\3bit_Exact_adder.asc
+Start Time: Tue Mar  5 16:29:03 2024
+solver = Normal
+Maximum thread count: 2
+tnom = 27
+temp = 27
+method = modified trap
+v23: Removing PWL point (1e-09,0)
+v23: Removing PWL point (0.00014,0)
+v23: Removing PWL point (0.00022,1)
+v23: Removing PWL point (0.00026,0)
+v23: Removing PWL point (0.00038,0)
+v23: Removing PWL point (0.00048,0)
+v24: Removing PWL point (4e-05,0)
+v24: Removing PWL point (0.00058,0)
+v24: Removing PWL point (0.00066,1)
+v24: Removing PWL point (0.0007,0)
+v24: Removing PWL point (0.00082,0)
+v24: Removing PWL point (0.00092,0)
+v25: Removing PWL point (1e-09,0)
+v25: Removing PWL point (0.00102,0)
+v25: Removing PWL point (0.0011,1)
+v25: Removing PWL point (0.00114,0)
+v25: Removing PWL point (0.00126,0)
+v25: Removing PWL point (0.00136,0)
+v26: Removing PWL point (1e-09,0)
+v26: Removing PWL point (0.00018,0)
+v26: Removing PWL point (0.00038,0)
+v26: Removing PWL point (0.00062,0)
+v26: Removing PWL point (0.00082,0)
+v26: Removing PWL point (0.00106,0)
+v26: Removing PWL point (0.00126,0)
+v27: Removing PWL point (1e-09,0)
+v27: Removing PWL point (0.0002,0)
+v27: Removing PWL point (0.00026,0)
+v27: Removing PWL point (0.00032,0)
+v27: Removing PWL point (0.0004,1)
+v27: Removing PWL point (0.00044,0)
+v27: Removing PWL point (0.00064,0)
+v27: Removing PWL point (0.0007,0)
+v27: Removing PWL point (0.00076,0)
+v27: Removing PWL point (0.00084,1)
+v27: Removing PWL point (0.00088,0)
+v27: Removing PWL point (0.00108,0)
+v27: Removing PWL point (0.00114,0)
+v27: Removing PWL point (0.0012,0)
+v27: Removing PWL point (0.00128,1)
+v27: Removing PWL point (0.00132,0)
+v28: Removing PWL point (1e-09,0)
+v28: Removing PWL point (0.00032,0)
+v28: Removing PWL point (0.00052,0)
+v28: Removing PWL point (0.00076,0)
+v28: Removing PWL point (0.00096,0)
+v28: Removing PWL point (0.0012,0)
+v29: Removing PWL point (1e-09,0)
+v29: Removing PWL point (0.00106,0)
+v29: Removing PWL point (0.00112,0)
+v29: Removing PWL point (0.0013,0.9)
+v29: Removing PWL point (0.00134,0)
+v30: Removing PWL point (1e-09,0)
+v30: Removing PWL point (8e-05,0)
+v30: Removing PWL point (0.00062,0)
+v30: Removing PWL point (0.00068,0)
+v30: Removing PWL point (0.00086,0.9)
+v30: Removing PWL point (0.0009,0)
+v31: Removing PWL point (1e-09,0)
+v31: Removing PWL point (6e-05,0)
+v31: Removing PWL point (0.00018,0)
+v31: Removing PWL point (0.00024,0)
+v31: Removing PWL point (0.00042,0.9)
+v31: Removing PWL point (0.00046,0)
+v32: Removing PWL point (1e-09,0)
+v32: Removing PWL point (8e-05,1)
+v32: Removing PWL point (0.00012,0)
+v32: Removing PWL point (0.00018,0)
+v32: Removing PWL point (0.00036,1)
+v32: Removing PWL point (0.0004,0)
+v32: Removing PWL point (0.00046,0)
+v33: Removing PWL point (1e-09,0)
+v33: Removing PWL point (8e-05,0)
+v33: Removing PWL point (0.00012,1)
+v33: Removing PWL point (0.0002,0)
+v33: Removing PWL point (0.00026,1)
+v33: Removing PWL point (0.00032,0)
+v33: Removing PWL point (0.00042,0)
+v34: Removing PWL point (1e-09,0)
+v34: Removing PWL point (0.00018,0)
+v34: Removing PWL point (0.00026,1)
+v34: Removing PWL point (0.00038,0)
+v34: Removing PWL point (0.00062,0)
+v34: Removing PWL point (0.0007,1)
+v34: Removing PWL point (0.00082,0)
+v34: Removing PWL point (0.00106,0)
+v34: Removing PWL point (0.00114,1)
+v34: Removing PWL point (0.00126,0)
+WARNING: Node N006 is floating.
+
+WARNING: Less than two connections to node a0.  This node is used by e:x12:1.
+WARNING: Less than two connections to node a1.  This node is used by e:x13:1.
+WARNING: Less than two connections to node a2.  This node is used by e:x14:1.
+WARNING: Less than two connections to node b0.  This node is used by e:x15:1.
+WARNING: Less than two connections to node b1.  This node is used by e:x16:1.
+WARNING: Less than two connections to node b2.  This node is used by e:x17:1.
+WARNING: Less than two connections to node s0.  This node is used by e:x18:1.
+WARNING: Less than two connections to node s1.  This node is used by e:x19:1.
+WARNING: Less than two connections to node c.  This node is used by e:x20:1.
+Direct Newton iteration for .op point succeeded.
+Total elapsed time: 0.179 seconds.
+
