@@ -11,6 +11,7 @@
 # Loading required packages packages
 import numpy as np
 import matplotlib.pyplot as plt
+import csv
 
 from scipy import signal
 from PIL import Image
@@ -42,7 +43,6 @@ def sobelEdgeDetectionExact(image):
     # magnitude = magnitude.astype(np.uint8)
     return magnitude
 
-
 # ## Sobel edge detection (approximate)
 # 
 # Uses all of the functions defined previously. The only thing not implemented is the division that is used
@@ -60,6 +60,12 @@ def stage_num_correction(peak_val, nstages):
         print("INFO: stage_num_correction: Correcting number of stages: {} -> {}".format(nstages, new_nstages))
 
     return new_nstages
+
+def normalize_image(image, newMin, newMax):
+    image = (image - np.min(image)) * ((newMax - newMin) / (np.max(image) - np.min(image))) + newMin
+
+    return image.astype(int)
+
 
 
 # Function to perform convolution with the Sobel kernels
@@ -79,7 +85,9 @@ def sobelEdgeDetection(image, approx_until = 0, keep_nstages_constant = False):
     total_energy += enrg
     total_prtime += prtime
 
-    filt_img = ((filt_img - np.min(filt_img)) / (np.max(filt_img) - np.min(filt_img))) * 255
+    filt_img = normalize_image(filt_img, 0, 255)
+    # print(np.max(filt_img))
+    # print(np.min(filt_img))
 
     if not keep_nstages_constant:
         peak_val = int(max(np.max(filt_img), np.max(sobel_vertical), np.max(sobel_horizontal)))
@@ -102,6 +110,9 @@ def sobelEdgeDetection(image, approx_until = 0, keep_nstages_constant = False):
         print("DEBUG: sobelEdgeDetection: Detected maximum in v_edges: {}".format(np.max(v_edges)))
         print("DEBUG: sobelEdgeDetection: Detected minimum in v_edges: {}".format(np.min(v_edges)))
 
+    h_edges = normalize_image(h_edges, -2**10, 2**10 -1)
+    v_edges = normalize_image(v_edges, -2**10, 2**10 -1)
+
     if not keep_nstages_constant:
         peak_val = int(max(np.max(h_edges), np.max(v_edges)))
         nstages = stage_num_correction(peak_val, nstages)
@@ -122,6 +133,9 @@ def sobelEdgeDetection(image, approx_until = 0, keep_nstages_constant = False):
         print("DEBUG: sobelEdgeDetection: Detected maximum in v_edg_sq: {}".format(np.max(v_edg_sq)))
         print("DEBUG: sobelEdgeDetection: Detected minimum in v_edg_sq: {}".format(np.min(v_edg_sq)))
 
+    h_edg_sq = normalize_image(h_edg_sq, 0, 2**20)
+    v_edg_sq = normalize_image(v_edg_sq, 0, 2**20)
+
     # Calculate the magnitude of gradients
     magnitude_squared, enrg, prtime = laAddVect(h_edg_sq.astype(int), v_edg_sq.astype(int), nstages=nstages, approx_until=approx_until, use_parallel=True)
     print("INFO: sobelEdgeDetection: Magnitude addition finished")
@@ -132,6 +146,8 @@ def sobelEdgeDetection(image, approx_until = 0, keep_nstages_constant = False):
         print("DEBUG: sobelEdgeDetection: Detected maximum in squared magnitude: {}".format(np.max(magnitude_squared)))
         print("DEBUG: sobelEdgeDetection: Detected minimum in squared magnitude: {}".format(np.min(magnitude_squared)))
 
+    magnitude_squared = normalize_image(magnitude_squared, 0, 2**20)
+
     if not keep_nstages_constant:
         peak_val = int(np.max(magnitude_squared))
         nstages = stage_num_correction(peak_val, nstages)
@@ -141,7 +157,7 @@ def sobelEdgeDetection(image, approx_until = 0, keep_nstages_constant = False):
     total_prtime += prtime
 
     # Normalize the magnitude to the range [0, 255]
-    magnitude_normalized = ((magnitude_approx - np.min(magnitude_approx)) / (np.max(magnitude_approx) - np.min(magnitude_approx))) * 255
+    magnitude_normalized = normalize_image(magnitude_approx, 0, 255)
 
     # Convert the magnitude to uint8 data type
     # magnitude_uint8 = magnitude_normalized.astype(np.uint8)
@@ -200,6 +216,14 @@ def approx_step_edge_detection(image, exact_edge_det, approx_until = 0):
     print(f"INFO: approx_step_edge_detection: Captured test version with {approx_until} approximated stages")
     return error, similarity, peak_snr, energ, prtime, nstages
 
+def approx_step_filtering(image, kern, kern_name, exact_image, approx_until = 0):
+    filtered, enrg, prtime = laConvolution(image.astype(int), kern, nstages=14, approx_until=approx_until, use_parallel = True)
+    filtered = normalize_image(filtered,0, 255)
+    filtered_img = Image.fromarray(filtered.astype(np.uint8), 'L')
+    filtered_img.save('tst_filtering_{}_{}.png'.format(approx_until, kern_name))
+    error, similarity, peak_snr = compare_image_operation(exact_image, filtered)
+    print(f"INFO: approx_step_filtering: Captured test version with {approx_until} approximated stages")
+    return error, similarity, peak_snr, enrg, prtime
 
 
 exact_edge_det = sobelEdgeDetectionExact(Y_sample)
@@ -208,14 +232,36 @@ exact_image.save('ref_edge_detect.png')
 # plt.imshow(exact_edge_det, cmap = "gray")
 # plt.show()
 
-error, similarity, peak_snr, energ, prtime, nstages = approx_step_edge_detection(Y_sample, exact_edge_det)
-
 table_rows = [['Op_type', 'Approx_level', 'MSE', 'SSIM', 'PSNR', 'Sum_energy', 'Sum_proctime']]
-table_rows.append(["EDGE", 0, error, similarity, peak_snr, energ, prtime])
 
-for appr_lvl in range(1, nstages+1):
+for appr_lvl in range(0, 8):
     error, similarity, peak_snr, energ, prtime,_ = approx_step_edge_detection(Y_sample, exact_edge_det, appr_lvl)
     table_rows.append(["EDGE", 0, error, similarity, peak_snr, energ, prtime])
+
+# ===============================================================================
+# Filtering with gauus filter of size 3x3
+# ===============================================================================
+exact_filtered =  signal.convolve2d(Y_sample, gauss_filt, mode = 'same')
+exact_filtered = normalize_image(exact_filtered,0, 255)
+exact_filtered_img = Image.fromarray(exact_filtered.astype(np.uint8), 'L')
+exact_filtered_img.save('ref_filtered_3.png')
+
+for appr_lvl in range(0, 8):
+    error, similarity, peak_snr, energ, prtime = approx_step_filtering(Y_sample, gauss_filt, "gauss3", exact_filtered, appr_lvl)
+    table_rows.append(["CONV_3", appr_lvl, error, similarity, peak_snr, energ, prtime])
+
+# ===============================================================================
+# Filtering with gauus filter of size 5x5
+# ===============================================================================
+
+exact_filtered =  signal.convolve2d(Y_sample, gauss_filt1, mode = 'same')
+exact_filtered = normalize_image(exact_filtered,0, 255)
+exact_filtered_img = Image.fromarray(exact_filtered.astype(np.uint8), 'L')
+exact_filtered_img.save('ref_filtered_5.png')
+
+for appr_lvl in range(0, 8):
+    error, similarity, peak_snr, energ, prtime = approx_step_filtering(Y_sample, gauss_filt1, "gauss5", exact_filtered, appr_lvl)
+    table_rows.append(["CONV_5", appr_lvl, error, similarity, peak_snr, energ, prtime])
 
 print(table_rows)
 with open('measured_results.csv', mode='w', newline='') as file:

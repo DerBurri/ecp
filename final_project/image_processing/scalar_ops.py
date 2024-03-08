@@ -122,18 +122,18 @@ def laSqRoot(y, nstages = 16, approx_until = 0):
     total_prtime = 0
 
     while (a <= y):
-        na, enrg, prtime = multiBitAdder(a, d, nstages, approx_until)
+        na, enrg, prtime = multiBitAdder(a, d, nstages, 0)
         total_energy += enrg
         total_prtime += prtime
-        nd, enrg, prtime = multiBitAdder(d, 2, nstages, approx_until)
+        nd, enrg, prtime = multiBitAdder(d, 2, nstages, 0)
         total_energy += enrg
         total_prtime += prtime
-        nL , enrg, prtime = multiBitAdder(L, 1, nstages, approx_until)
+        nL , enrg, prtime = multiBitAdder(L, 1, nstages, 0)
         total_energy += enrg
         total_prtime += prtime
 
-        if not ((na > a) and (nd > d) and (nL > L)):
-            raise Exception("ERROR: laSqRoot: infinite loop inferred from unsufficient bit length of the adder")
+        if not (na > a):
+            raise Exception("ERROR: laSqRoot: infinite loop inferred from unsufficient bit length of the adder! Number: {}, nstages: {}, a: {}, na: {}, d: {}, nd: {}, L: {}, nL: {}".format(y, nstages, a, na, d, nd, L, nL))
 
         a = na
         d = nd
